@@ -1,4 +1,5 @@
 server.cpp
 client.cpp
-CMake*
-cmake*
+CMakeLists.txt
+cmake-build-debug
+.idea
