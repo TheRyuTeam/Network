@@ -7,8 +7,12 @@
 namespace network {
 namespace ip {
 
+//TODO: link to impl?
+/// @class address_v4
 /**
- * IPv4 address
+ * Just a wrap above native ipv4 address
+ * @param Threadsafe - no threadsafe
+ * @throw any std::string exceptions in to_string() function
  */
 class address_v4
 {
@@ -17,177 +21,83 @@ public:
     typedef network::detail::uint32_t uint_t;
     typedef std::array<unsigned char, network::detail::in4_addr_bytes_len> byte_t;
 
+    enum class Class : unsigned char
+    {
+        This = 0,
+        A = 126,
+        Loopback = 127,
+        B = 193,
+        C = 225,
+        D = 241,
+        E = 255
+    };
 
+    enum class Mask : uint_t
+    {
+        A = 0xff000000,
+        B = 0xffff0000,
+        C = 0xffffff00
+    };
+
+    /// @see Constructors
     address_v4() noexcept = default;
-
-    explicit address_v4(addr_t _addr) noexcept
-        : addr_(_addr)
-    {
-    }
-
-    /// Uint type constructor
-    /**
-     * Creates address from uint in host byte order
-     * @param _uint - uint in host byte order
-     */
-    explicit address_v4(uint_t _uint) noexcept
-    {
-        addr_.s_addr = htonl(_uint);
-    }
-
-    /// Bytes constructor
-    /**
-     * Creates address from bytes in network byte order
-     * @param _bytes - bytes in network byte order
-     */
-    explicit address_v4(const byte_t& _bytes) noexcept
-    {
-        memcpy(&addr_, _bytes.data(), _bytes.size());
-    }
-
-    address_v4(const address_v4& _other) noexcept = default;
+    explicit address_v4(addr_t _addr) noexcept;
+    explicit address_v4(uint_t _uint) noexcept;
+    explicit address_v4(const byte_t& _bytes) noexcept;
     address_v4(address_v4&& _other) noexcept = default;
+    address_v4(const address_v4& _other) noexcept = default;
 
-    address_v4& operator=(addr_t _addr) noexcept
-    {
-        addr_ = _addr;
-        return *this;
-    }
-
-    /// Uint type assign operator
-    /**
-     * Assign address from uint in host byte order
-     */
-    address_v4& operator=(uint_t _uint) noexcept
-    {
-        addr_.s_addr = htonl(_uint);
-        return *this;
-    }
-
-    /// Bytes type assign operator
-    /**
-     * Assign address from bytes in network byte order
-     */
-    address_v4& operator=(const byte_t& _bytes) noexcept
-    {
-        memcpy(&addr_, _bytes.data(), _bytes.size());
-        return *this;
-    }
-
-    address_v4& operator=(const address_v4& _other) noexcept = default;
+    /// @see Assing operators
+    address_v4& operator=(addr_t _addr) noexcept;
+    address_v4& operator=(uint_t _uint) noexcept;
+    address_v4& operator=(const byte_t& _bytes) noexcept;
     address_v4& operator=(address_v4&& _other) noexcept = default;
+    address_v4& operator=(const address_v4& _other) noexcept = default;
 
-    friend bool operator==(const address_v4& _a, const address_v4& _b) noexcept
-    {
-        return _a.addr_.s_addr == _b.addr_.s_addr;
-    }
+    /// @see Conversions
+    uint_t to_uint() const noexcept;
+    byte_t to_bytes() const noexcept;
+    std::string to_string() const;
 
-    friend bool operator!=(const address_v4& _a, const address_v4& _b) noexcept
-    {
-        return !(_a == _b);
-    }
-
-    friend bool operator>(const address_v4& _a, const address_v4& _b) noexcept
-    {
-        return _a.addr_.s_addr > _b.addr_.s_addr;
-    }
-
-    friend bool operator>=(const address_v4& _a, const address_v4& _b) noexcept
-    {
-        return !(_b > _a);
-    }
-
-    friend bool operator<(const address_v4& _a, const address_v4& _b) noexcept
-    {
-        return !(_a >= _b);
-    }
-
-    friend bool operator<=(const address_v4& _a, const address_v4& _b) noexcept
-    {
-        return !(_a > _b);
-    }
+    /// @see Properties
+    addr_t addr() const noexcept;
+    bool is_unicast() const noexcept;
+    bool is_multicast() const noexcept;
+    bool is_broadcast() const noexcept;
+    bool is_loopback() const noexcept;
+    Class address_class() const noexcept;
+    uint_t network_address() const noexcept;
 
 
-    /**
-     * @return uint in host byte order
-     */
-    uint_t to_uint() const noexcept
-    {
-        return htonl(addr_.s_addr);
-    }
+    /// @see Comparison operators
+    friend bool operator==(const address_v4& _a, const address_v4& _b) noexcept;
+    friend bool operator!=(const address_v4& _a, const address_v4& _b) noexcept;
+    friend bool operator>(const address_v4& _a, const address_v4& _b) noexcept;
+    friend bool operator>=(const address_v4& _a, const address_v4& _b) noexcept;
+    friend bool operator<(const address_v4& _a, const address_v4& _b) noexcept;
+    friend bool operator<=(const address_v4& _a, const address_v4& _b) noexcept;
 
-    /**
-     * @return bytes in network byte order
-     */
-    byte_t to_bytes() const noexcept
-    {
-        byte_t bytes;
-        memcpy(bytes.data(), &addr_, bytes.size());
-        return bytes;
-    }
-
-
-    addr_t addr() const noexcept
-    {
-        return addr_;
-    }
-
-    /**
-     * @return adress string representation
-     */
-    std::string to_string() const
-    {
-        return inet_ntoa(addr_);
-    }
-
-    bool is_loopback() const noexcept
-    {
-        return addr_.s_addr == network::detail::inet_in4_addr_loopback;
-    }
-
-    static address_v4 loopback() noexcept
-    {
-        return address_v4(network::detail::in4_addr_loopback);
-    }
-
+    /// @see Static
+    static address_v4 loopback() noexcept;
 private:
     addr_t addr_ { };
 };
 
 namespace detail {
 
-network::ip::address_v4 to_address_v4(const char* _saddr, network::error* _error = nullptr) noexcept
-{
-    using namespace network::detail;
-    in4_addr_t addr{ };
-    int tmp = inet_pton(AF_INET, _saddr, &addr);
-    if( _error ) {
-        _error->value = tmp == 1 ? NO_ERROR : last_error();
-    }
-    return network::ip::address_v4(addr);
-}
+network::ip::address_v4 to_address_v4(const char* _saddr, network::error* _error = nullptr) noexcept;
 
 } // namespace detail
 
-address_v4 to_address_v4(const char* _saddr) noexcept
-{
-    return network::ip::detail::to_address_v4(_saddr);
-}
+address_v4 to_address_v4(const char* _saddr) noexcept;
+address_v4 to_address_v4(const char* _saddr, network::error& _error) noexcept;
+address_v4 to_address_v4(const std::string& _saddr) noexcept;
+address_v4 to_address_v4(const std::string& _saddr, network::error& _error) noexcept;
 
-address_v4 to_address_v4(const char* _saddr, network::error& _error) noexcept
-{
-    return network::ip::detail::to_address_v4(_saddr, &_error);
-}
+template<class _CharT, class _Traits>
+std::basic_ostream<_CharT, _Traits>& operator<<(std::basic_ostream<_CharT, _Traits>& _os, const address_v4& _address);
 
-address_v4 to_address_v4(const std::string& _saddr) noexcept
-{
-    return network::ip::to_address_v4(_saddr.c_str());
-}
-
-address_v4 to_address_v4(const std::string& _saddr, network::error& _error) noexcept
-{
-    return network::ip::to_address_v4(_saddr.c_str(), _error);
-}
+#include "impl/address_v4.hpp"
 
 } // namespace ip
 } // namespace network
